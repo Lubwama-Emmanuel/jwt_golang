@@ -49,25 +49,26 @@ func SignUp() gin.HandlerFunc {
 		var user models.User
 
 		if err := c.BindJSON(&user); err != nil {
+			fmt.Println(err)
 			c.JSON(http.StatusBadRequest, gin.H{
-				"Error": err.Error(),
+				"Error": "An error occured at binding",
 			})
 			return
 		}
 		validationErr := validate.Struct(user)
 		if validationErr != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"Error": validationErr.Error(),
+				"Error": validationErr,
 			})
 			return
 		}
 
-		count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
-		defer cancel()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"Error": "error occured while checking for email address"})
-			log.Panic()
-		}
+		// count, err := userCollection.CountDocuments(ctx, bson.M{"email": user.Email})
+		// defer cancel()
+		// if err != nil {
+		// 	c.JSON(http.StatusInternalServerError, gin.H{"Error": "error occured while checking for email address"})
+		// 	log.Panic()
+		// }
 
 		// count, err := userCollection.CountDocuments(ctx, bson.M{"phone": user.Phone})
 		// defer cancel()
@@ -78,9 +79,9 @@ func SignUp() gin.HandlerFunc {
 		hashedPassword := Hashpassword(user.Password)
 		user.Password = hashedPassword
 
-		if count > 0 {
-			c.JSON(http.StatusInternalServerError, gin.H{"Error": "Email or Phonenumber already exists, try logging in"})
-		}
+		// if count > 0 {
+		// 	c.JSON(http.StatusInternalServerError, gin.H{"Error": "Email or Phonenumber already exists, try logging in"})
+		// }
 
 		user.Created_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
 		user.Updated_at, _ = time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
@@ -92,7 +93,7 @@ func SignUp() gin.HandlerFunc {
 		resultInsertNumber, insertErr := userCollection.InsertOne(ctx, user)
 
 		if insertErr != nil {
-			msg := fmt.Sprintf("User item not inserted")
+			msg, _ := fmt.Println("User item not inserted")
 			c.JSON(http.StatusInternalServerError, gin.H{"Error": msg})
 			return
 		}
@@ -136,7 +137,15 @@ func LogIn() gin.HandlerFunc {
 	}
 }
 
-func GetUsers()
+// func GetUsers() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		if err := helpers.CheckUserType(c, "ADMIN"); err != nil {
+// 			c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+// 			return
+// 		}
+// 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+// 	}
+// }
 
 func GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
